@@ -379,6 +379,13 @@
       <span class="label">last error</span>
       <span class="value" id="last-error-display" style="max-width: 60%; text-align: right; word-break: break-word; white-space: normal;"></span>
     </div>
+    <div class="modal-row" style="flex-direction: column; align-items: stretch;">
+      <div style="display:flex; justify-content: space-between; align-items: center; width:100%">
+        <span class="label">debug log</span>
+        <button class="text-btn subtle" onclick="copyDebug()" style="font-size:12px">copy</button>
+      </div>
+      <pre id="debug-display" style="font-size:10px; background:#f5f6fa; padding:10px; border-radius:6px; margin-top:8px; max-height:200px; overflow:auto; white-space:pre-wrap; word-break:break-all; color:#374151; font-family: monospace;">empty</pre>
+    </div>
     <div class="actions">
       <button class="text-btn" onclick="closeSettings(); show('setup');">change token</button>
       <button class="text-btn danger" onclick="resetAll()">reset everything</button>
@@ -427,27 +434,52 @@
     if (txt) txt.textContent = text;
   }
 
+  function logDebug(entry) {
+    const log = JSON.parse(localStorage.getItem('vapeLog_debug') || '[]');
+    log.unshift({ t: new Date().toISOString(), ...entry });
+    localStorage.setItem('vapeLog_debug', JSON.stringify(log.slice(0, 10)));
+  }
+
   async function ghApi(method, body) {
     const token = getToken();
     if (!token) throw new Error('no token');
-    const r = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-      method,
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github+json',
-        ...(body ? { 'Content-Type': 'application/json' } : {})
-      },
-      ...(body ? { body: JSON.stringify(body) } : {})
+    const url = `https://api.github.com/gists/${GIST_ID}`;
+    const bodyStr = body ? JSON.stringify(body) : undefined;
+    let r, respBody = '', respHeaders = {};
+    try {
+      r = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github+json',
+          ...(body ? { 'Content-Type': 'application/json' } : {})
+        },
+        ...(bodyStr ? { body: bodyStr } : {})
+      });
+      respBody = await r.text();
+      r.headers.forEach((v, k) => { respHeaders[k] = v; });
+    } catch (e) {
+      logDebug({ method, url, reqBody: bodyStr, error: e.message });
+      throw new Error(`network error: ${e.message}`);
+    }
+    const xRateLimit = respHeaders['x-ratelimit-remaining'];
+    const xOauthScopes = respHeaders['x-oauth-scopes'];
+    logDebug({
+      method, url, status: r.status, ok: r.ok,
+      reqBodyLen: bodyStr ? bodyStr.length : 0,
+      respBodyPreview: respBody.slice(0, 300),
+      rateLimit: xRateLimit, scopes: xOauthScopes
     });
     if (!r.ok) {
       let detail = '';
-      try { const j = await r.json(); detail = j.message ? ` — ${j.message}` : ''; } catch {}
+      try { const j = JSON.parse(respBody); detail = j.message ? ` — ${j.message}` : ''; } catch {}
       if (r.status === 401) throw new Error(`401 invalid token${detail}`);
-      if (r.status === 403) throw new Error(`403 forbidden${detail} (token missing gist scope?)`);
+      if (r.status === 403) throw new Error(`403 forbidden${detail} (scopes: ${xOauthScopes || 'none'})`);
       if (r.status === 404) throw new Error(`404 gist not found${detail}`);
+      if (r.status === 422) throw new Error(`422 unprocessable${detail}`);
       throw new Error(`${r.status} ${method}${detail}`);
     }
-    return r.json();
+    try { return JSON.parse(respBody); } catch { return null; }
   }
 
   async function fetchRemote() {
@@ -677,7 +709,16 @@
     } else {
       errRow.style.display = 'none';
     }
+    const debugLog = JSON.parse(localStorage.getItem('vapeLog_debug') || '[]');
+    document.getElementById('debug-display').textContent = debugLog.length
+      ? JSON.stringify(debugLog, null, 2)
+      : 'empty (try logging an entry first)';
     m.classList.add('show');
+  }
+
+  function copyDebug() {
+    const text = document.getElementById('debug-display').textContent;
+    navigator.clipboard.writeText(text).then(() => toast('copied debug log'));
   }
   function closeSettings() { document.getElementById('settings-modal').classList.remove('show'); }
 
