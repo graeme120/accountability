@@ -148,14 +148,8 @@
   .name-btn.logged { opacity: 0.6; }
   .name-btn.logged::after { content: ' ✓'; color: #10b981; }
 
-  .question-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 14px;
-    gap: 12px;
-  }
-  .question-text { font-size: 16px; font-weight: 500; color: #1a1a2e; }
+  .back-btn { padding-left: 0; margin-bottom: 10px; }
+  .question-text { font-size: 16px; font-weight: 500; color: #1a1a2e; margin-bottom: 14px; }
   .question-text .name { color: #6366f1; }
   .yn-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .yn-btn {
@@ -350,10 +344,8 @@
       </div>
 
       <div class="logger-state" id="logger-question" style="display:none">
-        <div class="question-row">
-          <div class="question-text"><span class="name" id="question-name">?</span>, did you vape yesterday?</div>
-          <button class="text-btn subtle" onclick="setLoggerState('picker')">← change</button>
-        </div>
+        <button class="text-btn subtle back-btn" onclick="setLoggerState('picker')">← back</button>
+        <div class="question-text"><span class="name" id="question-name">?</span>, did you vape yesterday?</div>
         <div class="yn-buttons">
           <button class="yn-btn no" data-vaped="false">no</button>
           <button class="yn-btn yes" data-vaped="true">yes</button>
