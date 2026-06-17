@@ -43,10 +43,7 @@
     border-radius: 999px;
     border: 1px solid #e5e7eb;
   }
-  .sync-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: #9ca3af;
-  }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #9ca3af; }
   .sync-status.synced .sync-dot { background: #10b981; }
   .sync-status.syncing .sync-dot { background: #f59e0b; animation: pulse 1s infinite; }
   .sync-status.error .sync-dot { background: #ef4444; }
@@ -63,48 +60,14 @@
   }
   .gear-btn:hover { color: #1a1a2e; }
 
-  /* Buttons */
-  .name-buttons { display: flex; flex-direction: column; gap: 10px; }
-  .name-btn {
-    padding: 18px 20px;
-    font-size: 17px;
-    border: 1.5px solid #e5e7eb;
-    background: white;
-    border-radius: 14px;
-    cursor: pointer;
-    transition: all 0.15s;
-    font-weight: 500;
-    text-align: left;
-    color: #1a1a2e;
-  }
-  .name-btn:hover { border-color: #6366f1; background: #eef2ff; transform: translateY(-1px); }
-  .name-btn:active { transform: translateY(0); }
-
-  .question { font-size: 22px; margin: 28px 0 22px; text-align: center; font-weight: 500; }
-  .yn-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .yn-btn {
-    padding: 28px 16px;
-    font-size: 19px;
-    border: none;
-    border-radius: 14px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.15s;
-  }
-  .yn-btn.no { background: #6366f1; color: white; }
-  .yn-btn.no:hover { background: #4f46e5; transform: translateY(-1px); }
-  .yn-btn.yes { background: #fef2f2; color: #b91c1c; border: 1.5px solid #fecaca; }
-  .yn-btn.yes:hover { background: #fee2e2; transform: translateY(-1px); }
-  .yn-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  /* Dashboard */
+  /* Streak */
   .streak-card {
     background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
     color: white;
     padding: 28px;
     border-radius: 18px;
     text-align: center;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
     box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.4);
   }
   .streak-number { font-size: 72px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
@@ -123,8 +86,8 @@
   .pending-card {
     background: white;
     border-radius: 12px;
-    padding: 14px 18px;
-    font-size: 14px;
+    padding: 12px 16px;
+    font-size: 13px;
     color: #374151;
     margin-bottom: 14px;
     display: flex;
@@ -134,9 +97,10 @@
   }
   .pending-card .who { color: #6366f1; font-weight: 500; }
 
-  .grid-section { background: white; border-radius: 16px; padding: 22px; margin-bottom: 14px; }
-  .grid-title {
-    font-size: 13px;
+  /* Grid */
+  .grid-section { background: white; border-radius: 16px; padding: 22px; margin-bottom: 18px; }
+  .section-title {
+    font-size: 12px;
     font-weight: 600;
     margin-bottom: 16px;
     color: #6b7280;
@@ -159,10 +123,55 @@
   .cell.clean { background: #6366f1; }
   .cell.dirty { background: #fca5a5; }
   .cell.today { outline: 1.5px solid #4f46e5; outline-offset: 1px; }
-
   .legend { display: flex; gap: 14px; margin-top: 18px; font-size: 12px; color: #6b7280; flex-wrap: wrap; }
   .legend-item { display: flex; align-items: center; gap: 6px; }
   .legend-dot { width: 11px; height: 11px; border-radius: 3px; }
+
+  /* Logger */
+  .logger-section { background: white; border-radius: 16px; padding: 22px; margin-bottom: 14px; }
+  .logger-state { animation: fade 0.2s ease; }
+  .name-buttons { display: flex; gap: 8px; }
+  .name-btn {
+    flex: 1;
+    padding: 16px 12px;
+    font-size: 15px;
+    border: 1.5px solid #e5e7eb;
+    background: white;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 500;
+    color: #1a1a2e;
+  }
+  .name-btn:hover { border-color: #6366f1; background: #eef2ff; transform: translateY(-1px); }
+  .name-btn:active { transform: translateY(0); }
+  .name-btn.logged { opacity: 0.6; }
+  .name-btn.logged::after { content: ' ✓'; color: #10b981; }
+
+  .question-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 12px;
+  }
+  .question-text { font-size: 16px; font-weight: 500; color: #1a1a2e; }
+  .question-text .name { color: #6366f1; }
+  .yn-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .yn-btn {
+    padding: 20px 12px;
+    font-size: 17px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .yn-btn.no { background: #6366f1; color: white; }
+  .yn-btn.no:hover { background: #4f46e5; transform: translateY(-1px); }
+  .yn-btn.yes { background: #fef2f2; color: #b91c1c; border: 1.5px solid #fecaca; }
+  .yn-btn.yes:hover { background: #fee2e2; transform: translateY(-1px); }
+  .yn-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .actions { margin-top: 18px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
   .text-btn {
@@ -180,13 +189,8 @@
   .text-btn.danger { color: #ef4444; }
   .text-btn.danger:hover { color: #b91c1c; }
 
-  /* Setup screen */
-  .setup-card {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 16px;
-  }
+  /* Setup */
+  .setup-card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 16px; }
   .input-group { margin-bottom: 16px; }
   label {
     display: block;
@@ -259,14 +263,11 @@
 
   /* Settings modal */
   .modal-backdrop {
-    position: fixed;
-    inset: 0;
+    position: fixed; inset: 0;
     background: rgba(0,0,0,0.4);
     display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 50;
-    padding: 20px;
+    align-items: center; justify-content: center;
+    z-index: 50; padding: 20px;
   }
   .modal-backdrop.show { display: flex; }
   .modal {
@@ -295,7 +296,7 @@
   <!-- Setup -->
   <div id="screen-setup" class="screen active">
     <h1>one-time setup</h1>
-    <p class="subtitle">enter the access token graeme shared with you. it's stored only on this device.</p>
+    <p class="subtitle">paste the access token graeme shared with you. it's stored only on this device.</p>
     <div class="setup-card">
       <div id="setup-error" style="display:none" class="error-msg"></div>
       <div class="input-group">
@@ -308,56 +309,27 @@
       <button class="primary-btn" id="setup-submit">connect</button>
     </div>
     <div class="actions">
-      <button class="text-btn subtle" onclick="show('dashboard')">just view (offline)</button>
+      <button class="text-btn subtle" onclick="show('main')">just view (offline)</button>
     </div>
   </div>
 
-  <!-- Name picker -->
-  <div id="screen-name" class="screen">
+  <!-- Main: tracker on top, logger below -->
+  <div id="screen-main" class="screen">
     <div class="topbar">
       <div class="sync-status" id="sync-status"><div class="sync-dot"></div><span id="sync-text">loading</span></div>
       <button class="gear-btn" onclick="openSettings()">⚙ settings</button>
     </div>
-    <h1>who's logging in?</h1>
-    <p class="subtitle">vape accountability · tap your name</p>
-    <div class="name-buttons">
-      <button class="name-btn" data-name="Brian">Brian</button>
-      <button class="name-btn" data-name="Karla">Karla</button>
-      <button class="name-btn" data-name="Graeme">Graeme</button>
-    </div>
-    <div class="actions">
-      <button class="text-btn subtle" onclick="show('dashboard')">just viewing the tracker →</button>
-    </div>
-  </div>
 
-  <!-- Question -->
-  <div id="screen-question" class="screen">
-    <h1 id="hello-name">hey</h1>
-    <p class="subtitle" id="date-label"></p>
-    <p class="question">did you vape yesterday?</p>
-    <div class="yn-buttons">
-      <button class="yn-btn no" data-vaped="false">no</button>
-      <button class="yn-btn yes" data-vaped="true">yes</button>
-    </div>
-    <div class="actions">
-      <button class="text-btn subtle" onclick="show('name')">← back</button>
-    </div>
-  </div>
-
-  <!-- Dashboard -->
-  <div id="screen-dashboard" class="screen">
-    <div class="topbar">
-      <div class="sync-status" id="sync-status-dash"><div class="sync-dot"></div><span id="sync-text-dash">loading</span></div>
-      <button class="gear-btn" onclick="openSettings()">⚙ settings</button>
-    </div>
     <div class="streak-card" id="streak-card">
       <div class="streak-number" id="streak-num">0</div>
       <div class="streak-label" id="streak-text">days vape-free together</div>
       <div class="status-pill" id="status-pill"></div>
     </div>
+
     <div id="pending-section"></div>
+
     <div class="grid-section">
-      <div class="grid-title">last 30 days</div>
+      <div class="section-title">last 30 days</div>
       <div id="grid"></div>
       <div class="legend">
         <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div>clean</div>
@@ -365,8 +337,31 @@
         <div class="legend-item"><div class="legend-dot" style="background:#eef0f4"></div>no log</div>
       </div>
     </div>
+
+    <div class="logger-section">
+      <div class="section-title" id="logger-title">log for yesterday</div>
+
+      <div class="logger-state" id="logger-picker">
+        <div class="name-buttons">
+          <button class="name-btn" data-name="Brian">Brian</button>
+          <button class="name-btn" data-name="Karla">Karla</button>
+          <button class="name-btn" data-name="Graeme">Graeme</button>
+        </div>
+      </div>
+
+      <div class="logger-state" id="logger-question" style="display:none">
+        <div class="question-row">
+          <div class="question-text"><span class="name" id="question-name">?</span>, did you vape yesterday?</div>
+          <button class="text-btn subtle" onclick="setLoggerState('picker')">← change</button>
+        </div>
+        <div class="yn-buttons">
+          <button class="yn-btn no" data-vaped="false">no</button>
+          <button class="yn-btn yes" data-vaped="true">yes</button>
+        </div>
+      </div>
+    </div>
+
     <div class="actions">
-      <button class="text-btn" onclick="show('name')">log another →</button>
       <button class="text-btn subtle" onclick="refreshData()">refresh</button>
     </div>
   </div>
@@ -407,7 +402,6 @@
   const LASTSYNC_KEY = 'vapeLog_lastSync';
 
   let currentUser = null;
-  let syncing = false;
 
   const getLocal = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"days":{}}');
   const setLocal = (d) => localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
@@ -425,39 +419,32 @@
     d.setDate(d.getDate() - 1);
     return ymd(d);
   };
+  const prettyDate = (date) => date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toLowerCase();
 
   function setSyncStatus(state, text) {
-    ['sync-status', 'sync-status-dash'].forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
+    const el = document.getElementById('sync-status');
+    if (el) {
       el.classList.remove('synced', 'syncing', 'error', 'offline');
       el.classList.add(state);
-    });
-    ['sync-text', 'sync-text-dash'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = text;
-    });
+    }
+    const txt = document.getElementById('sync-text');
+    if (txt) txt.textContent = text;
   }
 
   async function fetchRemote() {
     const token = getToken();
     if (!token) return null;
-    try {
-      const r = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-        headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
-      });
-      if (r.status === 401) throw new Error('invalid token');
-      if (!r.ok) throw new Error(`gist fetch failed (${r.status})`);
-      const gist = await r.json();
-      const file = gist.files[GIST_FILE];
-      if (!file) return { days: {} };
-      const parsed = JSON.parse(file.content || '{"days":{}}');
-      if (!parsed.days) parsed.days = {};
-      return parsed;
-    } catch (e) {
-      console.error('fetch failed', e);
-      throw e;
-    }
+    const r = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
+    });
+    if (r.status === 401) throw new Error('invalid token');
+    if (!r.ok) throw new Error(`gist fetch failed (${r.status})`);
+    const gist = await r.json();
+    const file = gist.files[GIST_FILE];
+    if (!file) return { days: {} };
+    const parsed = JSON.parse(file.content || '{"days":{}}');
+    if (!parsed.days) parsed.days = {};
+    return parsed;
   }
 
   async function pushRemote(state) {
@@ -470,9 +457,7 @@
         'Content-Type': 'application/json',
         'Accept': 'application/vnd.github+json'
       },
-      body: JSON.stringify({
-        files: { [GIST_FILE]: { content: JSON.stringify(state, null, 2) } }
-      })
+      body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(state, null, 2) } } })
     });
     if (!r.ok) throw new Error(`gist push failed (${r.status})`);
   }
@@ -503,18 +488,14 @@
   }
 
   async function logEntry(person, day, vaped) {
-    // Optimistic local update
     const local = getLocal();
     if (!local.days[day]) local.days[day] = {};
     local.days[day][person] = vaped;
     setLocal(local);
+    render();
 
-    if (!getToken()) {
-      toast('saved locally (no sync)');
-      return;
-    }
+    if (!getToken()) { toast('saved locally (no sync)'); return; }
 
-    // Sync: fetch latest, merge our change, push
     setSyncStatus('syncing', 'syncing…');
     try {
       const remote = await fetchRemote();
@@ -524,6 +505,7 @@
       setLocal(remote);
       localStorage.setItem(LASTSYNC_KEY, Date.now().toString());
       setSyncStatus('synced', 'synced');
+      render();
     } catch (e) {
       setSyncStatus('error', 'sync failed');
       toast('saved locally — will retry on next visit');
@@ -531,21 +513,14 @@
   }
 
   async function refreshData() {
-    try {
-      await syncDown();
-      if (document.getElementById('screen-dashboard').classList.contains('active')) {
-        renderDashboard();
-      }
-      toast('refreshed');
-    } catch (e) {
-      toast('refresh failed');
-    }
+    try { await syncDown(); render(); toast('refreshed'); }
+    catch (e) { toast('refresh failed'); }
   }
 
   function show(screen) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('screen-' + screen).classList.add('active');
-    if (screen === 'dashboard') renderDashboard();
+    if (screen === 'main') render();
     window.scrollTo(0, 0);
   }
 
@@ -557,7 +532,12 @@
     window._toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
   }
 
-  // Setup screen
+  function setLoggerState(state) {
+    document.getElementById('logger-picker').style.display = state === 'picker' ? 'block' : 'none';
+    document.getElementById('logger-question').style.display = state === 'question' ? 'block' : 'none';
+  }
+
+  // Setup screen submit
   document.getElementById('setup-submit').addEventListener('click', async () => {
     const input = document.getElementById('pat-input');
     const err = document.getElementById('setup-error');
@@ -569,47 +549,57 @@
     setToken(token);
     try {
       await syncDown();
-      btn.textContent = 'connect';
-      btn.disabled = false;
-      show('name');
+      btn.textContent = 'connect'; btn.disabled = false;
+      show('main');
     } catch (e) {
       localStorage.removeItem(TOKEN_KEY);
       err.style.display = 'block';
       err.textContent = e.message === 'invalid token' ? 'token rejected. double-check it has gist scope.' : 'connection failed: ' + e.message;
-      btn.textContent = 'connect';
-      btn.disabled = false;
+      btn.textContent = 'connect'; btn.disabled = false;
     }
   });
 
-  document.querySelectorAll('.name-btn').forEach(btn => {
+  // Name picker (inline)
+  document.querySelectorAll('#logger-picker .name-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       currentUser = btn.dataset.name;
-      document.getElementById('hello-name').textContent = `hey ${currentUser.toLowerCase()}`;
-      const yDate = new Date();
-      yDate.setDate(yDate.getDate() - 1);
-      const dateStr = yDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-      document.getElementById('date-label').textContent = `logging for ${dateStr.toLowerCase()}`;
-      show('question');
+      document.getElementById('question-name').textContent = currentUser.toLowerCase();
+      setLoggerState('question');
     });
   });
 
-  document.querySelectorAll('.yn-btn').forEach(btn => {
+  // Yes/no
+  document.querySelectorAll('#logger-question .yn-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const vaped = btn.dataset.vaped === 'true';
-      document.querySelectorAll('.yn-btn').forEach(b => b.disabled = true);
+      document.querySelectorAll('#logger-question .yn-btn').forEach(b => b.disabled = true);
       await logEntry(currentUser, yesterdayKey(), vaped);
-      document.querySelectorAll('.yn-btn').forEach(b => b.disabled = false);
+      document.querySelectorAll('#logger-question .yn-btn').forEach(b => b.disabled = false);
       toast(vaped ? "logged. fresh start today." : "nice. keep it going.");
-      show('dashboard');
+      setLoggerState('picker');
+      currentUser = null;
     });
   });
 
-  function renderDashboard() {
+  function render() {
     const data = getLocal();
+
+    // Logger title with date
+    const yDate = new Date();
+    yDate.setDate(yDate.getDate() - 1);
+    document.getElementById('logger-title').textContent = `log for ${prettyDate(yDate)}`;
+
+    // Mark logged people on the picker
+    const yKey = yesterdayKey();
+    const yData = data.days[yKey] || {};
+    document.querySelectorAll('#logger-picker .name-btn').forEach(btn => {
+      btn.classList.toggle('logged', yData[btn.dataset.name] !== undefined);
+    });
+
+    // Grid
     const DAYS = 30;
     const grid = document.getElementById('grid');
     grid.innerHTML = '';
-
     const days = [];
     for (let i = DAYS - 1; i >= 0; i--) {
       const d = new Date();
@@ -617,7 +607,6 @@
       days.push(ymd(d));
     }
     const todayKey = ymd(new Date());
-
     PEOPLE.forEach(person => {
       const row = document.createElement('div');
       row.className = 'grid-row';
@@ -643,6 +632,7 @@
       grid.appendChild(row);
     });
 
+    // Streak
     let streak = 0;
     for (let i = 1; i < 365; i++) {
       const d = new Date();
@@ -659,13 +649,10 @@
     document.getElementById('streak-text').textContent = streak === 1 ? 'day vape-free together' : 'days vape-free together';
     card.classList.toggle('zero', streak === 0);
 
-    const yKey = yesterdayKey();
-    const yData = data.days[yKey] || {};
     const logged = PEOPLE.filter(p => yData[p] !== undefined);
     const missing = PEOPLE.filter(p => yData[p] === undefined);
     document.getElementById('status-pill').textContent = `${logged.length}/3 logged yesterday`;
-    const pendingSection = document.getElementById('pending-section');
-    pendingSection.innerHTML = (missing.length > 0 && missing.length < 3)
+    document.getElementById('pending-section').innerHTML = (missing.length > 0 && missing.length < 3)
       ? `<div class="pending-card"><span>still need to log:</span><span class="who">${missing.join(', ')}</span></div>`
       : '';
   }
@@ -700,9 +687,10 @@
       setSyncStatus('offline', 'offline');
       return;
     }
-    show('name');
+    show('main');
     try {
       await syncDown();
+      render();
     } catch (e) {
       if (e.message === 'invalid token') {
         localStorage.removeItem(TOKEN_KEY);
