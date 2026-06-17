@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>accountability</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: #f5f6fa;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 24px 20px;
+    display: flex;
+    justify-content: center;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 640px; width: 100%; }
+
+  h1 { font-size: 26px; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.5px; }
+  .subtitle { color: #6b7280; margin-bottom: 28px; font-size: 14px; line-height: 1.5; }
+
+  .screen { display: none; animation: fade 0.25s ease; }
+  .screen.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* Top bar */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    font-size: 12px;
+  }
+  .sync-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #6b7280;
+    padding: 4px 10px;
+    background: white;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+  }
+  .sync-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #9ca3af;
+  }
+  .sync-status.synced .sync-dot { background: #10b981; }
+  .sync-status.syncing .sync-dot { background: #f59e0b; animation: pulse 1s infinite; }
+  .sync-status.error .sync-dot { background: #ef4444; }
+  .sync-status.offline .sync-dot { background: #9ca3af; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .gear-btn {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 4px 10px;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 12px;
+  }
+  .gear-btn:hover { color: #1a1a2e; }
+
+  /* Buttons */
+  .name-buttons { display: flex; flex-direction: column; gap: 10px; }
+  .name-btn {
+    padding: 18px 20px;
+    font-size: 17px;
+    border: 1.5px solid #e5e7eb;
+    background: white;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 500;
+    text-align: left;
+    color: #1a1a2e;
+  }
+  .name-btn:hover { border-color: #6366f1; background: #eef2ff; transform: translateY(-1px); }
+  .name-btn:active { transform: translateY(0); }
+
+  .question { font-size: 22px; margin: 28px 0 22px; text-align: center; font-weight: 500; }
+  .yn-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .yn-btn {
+    padding: 28px 16px;
+    font-size: 19px;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .yn-btn.no { background: #6366f1; color: white; }
+  .yn-btn.no:hover { background: #4f46e5; transform: translateY(-1px); }
+  .yn-btn.yes { background: #fef2f2; color: #b91c1c; border: 1.5px solid #fecaca; }
+  .yn-btn.yes:hover { background: #fee2e2; transform: translateY(-1px); }
+  .yn-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Dashboard */
+  .streak-card {
+    background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+    color: white;
+    padding: 28px;
+    border-radius: 18px;
+    text-align: center;
+    margin-bottom: 18px;
+    box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.4);
+  }
+  .streak-number { font-size: 72px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+  .streak-label { font-size: 15px; opacity: 0.92; margin-top: 6px; }
+  .streak-card.zero { background: linear-gradient(135deg, #9ca3af, #d1d5db); box-shadow: none; }
+  .status-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 999px;
+    font-size: 12px;
+    margin-top: 14px;
+    backdrop-filter: blur(8px);
+  }
+
+  .pending-card {
+    background: white;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #374151;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid #f3f4f6;
+  }
+  .pending-card .who { color: #6366f1; font-weight: 500; }
+
+  .grid-section { background: white; border-radius: 16px; padding: 22px; margin-bottom: 14px; }
+  .grid-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .grid-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+  .grid-row:last-child { margin-bottom: 0; }
+  .name-label { width: 60px; font-size: 14px; color: #1f2937; font-weight: 500; }
+  .day-cells { display: flex; gap: 3px; flex: 1; overflow-x: auto; }
+  .cell {
+    width: 14px;
+    height: 14px;
+    background: #eef0f4;
+    border-radius: 3px;
+    flex-shrink: 0;
+    transition: transform 0.1s;
+  }
+  .cell:hover { transform: scale(1.4); }
+  .cell.clean { background: #6366f1; }
+  .cell.dirty { background: #fca5a5; }
+  .cell.today { outline: 1.5px solid #4f46e5; outline-offset: 1px; }
+
+  .legend { display: flex; gap: 14px; margin-top: 18px; font-size: 12px; color: #6b7280; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 11px; height: 11px; border-radius: 3px; }
+
+  .actions { margin-top: 18px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .text-btn {
+    background: none;
+    border: none;
+    color: #6366f1;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 6px 8px;
+  }
+  .text-btn:hover { color: #4f46e5; text-decoration: underline; }
+  .text-btn.subtle { color: #9ca3af; }
+  .text-btn.subtle:hover { color: #6b7280; }
+  .text-btn.danger { color: #ef4444; }
+  .text-btn.danger:hover { color: #b91c1c; }
+
+  /* Setup screen */
+  .setup-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .input-group { margin-bottom: 16px; }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+  }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    background: #fafafa;
+    transition: all 0.15s;
+  }
+  input[type="text"]:focus, input[type="password"]:focus {
+    outline: none;
+    border-color: #6366f1;
+    background: white;
+  }
+  .help-text { font-size: 12px; color: #6b7280; margin-top: 6px; line-height: 1.4; }
+  .help-text a { color: #6366f1; text-decoration: none; }
+  .help-text a:hover { text-decoration: underline; }
+
+  .primary-btn {
+    width: 100%;
+    padding: 14px;
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .primary-btn:hover { background: #4f46e5; }
+  .primary-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .error-msg {
+    background: #fef2f2;
+    color: #b91c1c;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    border: 1px solid #fecaca;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #1f2937;
+    color: white;
+    padding: 12px 22px;
+    border-radius: 10px;
+    opacity: 0;
+    transition: all 0.25s;
+    pointer-events: none;
+    font-size: 14px;
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3);
+    z-index: 100;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Settings modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 420px;
+    width: 100%;
+  }
+  .modal h2 { font-size: 18px; margin-bottom: 16px; font-weight: 600; }
+  .modal-row {
+    padding: 12px 0;
+    border-top: 1px solid #f3f4f6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-row:first-of-type { border-top: none; }
+  .modal-row .label { font-size: 14px; color: #374151; }
+  .modal-row .value { font-size: 12px; color: #9ca3af; font-family: monospace; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Setup -->
+  <div id="screen-setup" class="screen active">
+    <h1>one-time setup</h1>
+    <p class="subtitle">enter the access token graeme shared with you. it's stored only on this device.</p>
+    <div class="setup-card">
+      <div id="setup-error" style="display:none" class="error-msg"></div>
+      <div class="input-group">
+        <label for="pat-input">github personal access token</label>
+        <input type="password" id="pat-input" placeholder="github_pat_..." autocomplete="off" />
+        <div class="help-text">
+          graeme: generate one at <a href="https://github.com/settings/tokens?type=beta" target="_blank">github.com/settings/tokens</a> with <strong>gist</strong> scope, then share it via signal/imessage with brian and karla.
+        </div>
+      </div>
+      <button class="primary-btn" id="setup-submit">connect</button>
+    </div>
+    <div class="actions">
+      <button class="text-btn subtle" onclick="show('dashboard')">just view (offline)</button>
+    </div>
+  </div>
+
+  <!-- Name picker -->
+  <div id="screen-name" class="screen">
+    <div class="topbar">
+      <div class="sync-status" id="sync-status"><div class="sync-dot"></div><span id="sync-text">loading</span></div>
+      <button class="gear-btn" onclick="openSettings()">⚙ settings</button>
+    </div>
+    <h1>who's logging in?</h1>
+    <p class="subtitle">vape accountability · tap your name</p>
+    <div class="name-buttons">
+      <button class="name-btn" data-name="Brian">Brian</button>
+      <button class="name-btn" data-name="Karla">Karla</button>
+      <button class="name-btn" data-name="Graeme">Graeme</button>
+    </div>
+    <div class="actions">
+      <button class="text-btn subtle" onclick="show('dashboard')">just viewing the tracker →</button>
+    </div>
+  </div>
+
+  <!-- Question -->
+  <div id="screen-question" class="screen">
+    <h1 id="hello-name">hey</h1>
+    <p class="subtitle" id="date-label"></p>
+    <p class="question">did you vape yesterday?</p>
+    <div class="yn-buttons">
+      <button class="yn-btn no" data-vaped="false">no</button>
+      <button class="yn-btn yes" data-vaped="true">yes</button>
+    </div>
+    <div class="actions">
+      <button class="text-btn subtle" onclick="show('name')">← back</button>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="screen-dashboard" class="screen">
+    <div class="topbar">
+      <div class="sync-status" id="sync-status-dash"><div class="sync-dot"></div><span id="sync-text-dash">loading</span></div>
+      <button class="gear-btn" onclick="openSettings()">⚙ settings</button>
+    </div>
+    <div class="streak-card" id="streak-card">
+      <div class="streak-number" id="streak-num">0</div>
+      <div class="streak-label" id="streak-text">days vape-free together</div>
+      <div class="status-pill" id="status-pill"></div>
+    </div>
+    <div id="pending-section"></div>
+    <div class="grid-section">
+      <div class="grid-title">last 30 days</div>
+      <div id="grid"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div>clean</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fca5a5"></div>vaped</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#eef0f4"></div>no log</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="text-btn" onclick="show('name')">log another →</button>
+      <button class="text-btn subtle" onclick="refreshData()">refresh</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="modal-backdrop" id="settings-modal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <h2>settings</h2>
+    <div class="modal-row">
+      <span class="label">gist id</span>
+      <span class="value" id="gist-id-display">—</span>
+    </div>
+    <div class="modal-row">
+      <span class="label">token</span>
+      <span class="value" id="token-display">—</span>
+    </div>
+    <div class="modal-row">
+      <span class="label">last sync</span>
+      <span class="value" id="last-sync-display">never</span>
+    </div>
+    <div class="actions">
+      <button class="text-btn" onclick="closeSettings(); show('setup');">change token</button>
+      <button class="text-btn danger" onclick="resetAll()">reset everything</button>
+      <button class="text-btn subtle" onclick="closeSettings()">close</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  const PEOPLE = ['Brian', 'Karla', 'Graeme'];
+  const GIST_ID = '387432bdc79a415f7ec301a58aa5e7ec';
+  const GIST_FILE = 'vapelog.json';
+  const STORAGE_KEY = 'vapeLog_v2';
+  const TOKEN_KEY = 'vapeLog_token';
+  const LASTSYNC_KEY = 'vapeLog_lastSync';
+
+  let currentUser = null;
+  let syncing = false;
+
+  const getLocal = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"days":{}}');
+  const setLocal = (d) => localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+  const getToken = () => localStorage.getItem(TOKEN_KEY);
+  const setToken = (t) => localStorage.setItem(TOKEN_KEY, t);
+
+  const ymd = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+  const yesterdayKey = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return ymd(d);
+  };
+
+  function setSyncStatus(state, text) {
+    ['sync-status', 'sync-status-dash'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('synced', 'syncing', 'error', 'offline');
+      el.classList.add(state);
+    });
+    ['sync-text', 'sync-text-dash'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    });
+  }
+
+  async function fetchRemote() {
+    const token = getToken();
+    if (!token) return null;
+    try {
+      const r = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+        headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
+      });
+      if (r.status === 401) throw new Error('invalid token');
+      if (!r.ok) throw new Error(`gist fetch failed (${r.status})`);
+      const gist = await r.json();
+      const file = gist.files[GIST_FILE];
+      if (!file) return { days: {} };
+      const parsed = JSON.parse(file.content || '{"days":{}}');
+      if (!parsed.days) parsed.days = {};
+      return parsed;
+    } catch (e) {
+      console.error('fetch failed', e);
+      throw e;
+    }
+  }
+
+  async function pushRemote(state) {
+    const token = getToken();
+    if (!token) return;
+    const r = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `token ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github+json'
+      },
+      body: JSON.stringify({
+        files: { [GIST_FILE]: { content: JSON.stringify(state, null, 2) } }
+      })
+    });
+    if (!r.ok) throw new Error(`gist push failed (${r.status})`);
+  }
+
+  function mergeStates(a, b) {
+    const out = { days: { ...(a.days || {}) } };
+    for (const [day, people] of Object.entries(b.days || {})) {
+      out.days[day] = { ...(out.days[day] || {}), ...people };
+    }
+    return out;
+  }
+
+  async function syncDown() {
+    if (!getToken()) { setSyncStatus('offline', 'offline'); return; }
+    setSyncStatus('syncing', 'syncing…');
+    try {
+      const remote = await fetchRemote();
+      const local = getLocal();
+      const merged = mergeStates(remote, local);
+      setLocal(merged);
+      localStorage.setItem(LASTSYNC_KEY, Date.now().toString());
+      setSyncStatus('synced', 'synced');
+      return merged;
+    } catch (e) {
+      setSyncStatus('error', e.message);
+      throw e;
+    }
+  }
+
+  async function logEntry(person, day, vaped) {
+    // Optimistic local update
+    const local = getLocal();
+    if (!local.days[day]) local.days[day] = {};
+    local.days[day][person] = vaped;
+    setLocal(local);
+
+    if (!getToken()) {
+      toast('saved locally (no sync)');
+      return;
+    }
+
+    // Sync: fetch latest, merge our change, push
+    setSyncStatus('syncing', 'syncing…');
+    try {
+      const remote = await fetchRemote();
+      if (!remote.days[day]) remote.days[day] = {};
+      remote.days[day][person] = vaped;
+      await pushRemote(remote);
+      setLocal(remote);
+      localStorage.setItem(LASTSYNC_KEY, Date.now().toString());
+      setSyncStatus('synced', 'synced');
+    } catch (e) {
+      setSyncStatus('error', 'sync failed');
+      toast('saved locally — will retry on next visit');
+    }
+  }
+
+  async function refreshData() {
+    try {
+      await syncDown();
+      if (document.getElementById('screen-dashboard').classList.contains('active')) {
+        renderDashboard();
+      }
+      toast('refreshed');
+    } catch (e) {
+      toast('refresh failed');
+    }
+  }
+
+  function show(screen) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + screen).classList.add('active');
+    if (screen === 'dashboard') renderDashboard();
+    window.scrollTo(0, 0);
+  }
+
+  function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  // Setup screen
+  document.getElementById('setup-submit').addEventListener('click', async () => {
+    const input = document.getElementById('pat-input');
+    const err = document.getElementById('setup-error');
+    const btn = document.getElementById('setup-submit');
+    const token = input.value.trim();
+    if (!token) { err.style.display = 'block'; err.textContent = 'paste a token'; return; }
+    btn.disabled = true; btn.textContent = 'verifying…';
+    err.style.display = 'none';
+    setToken(token);
+    try {
+      await syncDown();
+      btn.textContent = 'connect';
+      btn.disabled = false;
+      show('name');
+    } catch (e) {
+      localStorage.removeItem(TOKEN_KEY);
+      err.style.display = 'block';
+      err.textContent = e.message === 'invalid token' ? 'token rejected. double-check it has gist scope.' : 'connection failed: ' + e.message;
+      btn.textContent = 'connect';
+      btn.disabled = false;
+    }
+  });
+
+  document.querySelectorAll('.name-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentUser = btn.dataset.name;
+      document.getElementById('hello-name').textContent = `hey ${currentUser.toLowerCase()}`;
+      const yDate = new Date();
+      yDate.setDate(yDate.getDate() - 1);
+      const dateStr = yDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+      document.getElementById('date-label').textContent = `logging for ${dateStr.toLowerCase()}`;
+      show('question');
+    });
+  });
+
+  document.querySelectorAll('.yn-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const vaped = btn.dataset.vaped === 'true';
+      document.querySelectorAll('.yn-btn').forEach(b => b.disabled = true);
+      await logEntry(currentUser, yesterdayKey(), vaped);
+      document.querySelectorAll('.yn-btn').forEach(b => b.disabled = false);
+      toast(vaped ? "logged. fresh start today." : "nice. keep it going.");
+      show('dashboard');
+    });
+  });
+
+  function renderDashboard() {
+    const data = getLocal();
+    const DAYS = 30;
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+
+    const days = [];
+    for (let i = DAYS - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(ymd(d));
+    }
+    const todayKey = ymd(new Date());
+
+    PEOPLE.forEach(person => {
+      const row = document.createElement('div');
+      row.className = 'grid-row';
+      const label = document.createElement('div');
+      label.className = 'name-label';
+      label.textContent = person;
+      row.appendChild(label);
+      const cells = document.createElement('div');
+      cells.className = 'day-cells';
+      days.forEach(day => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.title = `${person} · ${day}`;
+        if (day === todayKey) cell.classList.add('today');
+        const val = data.days[day] && data.days[day][person];
+        if (val !== undefined) {
+          cell.classList.add(val ? 'dirty' : 'clean');
+          cell.title += val ? ' · vaped' : ' · clean';
+        }
+        cells.appendChild(cell);
+      });
+      row.appendChild(cells);
+      grid.appendChild(row);
+    });
+
+    let streak = 0;
+    for (let i = 1; i < 365; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = ymd(d);
+      const dayData = data.days[key];
+      if (!dayData) break;
+      const allClean = PEOPLE.every(p => dayData[p] === false);
+      if (allClean) streak++;
+      else break;
+    }
+    const card = document.getElementById('streak-card');
+    document.getElementById('streak-num').textContent = streak;
+    document.getElementById('streak-text').textContent = streak === 1 ? 'day vape-free together' : 'days vape-free together';
+    card.classList.toggle('zero', streak === 0);
+
+    const yKey = yesterdayKey();
+    const yData = data.days[yKey] || {};
+    const logged = PEOPLE.filter(p => yData[p] !== undefined);
+    const missing = PEOPLE.filter(p => yData[p] === undefined);
+    document.getElementById('status-pill').textContent = `${logged.length}/3 logged yesterday`;
+    const pendingSection = document.getElementById('pending-section');
+    pendingSection.innerHTML = (missing.length > 0 && missing.length < 3)
+      ? `<div class="pending-card"><span>still need to log:</span><span class="who">${missing.join(', ')}</span></div>`
+      : '';
+  }
+
+  function openSettings() {
+    const m = document.getElementById('settings-modal');
+    document.getElementById('gist-id-display').textContent = GIST_ID.slice(0, 8) + '…';
+    const tok = getToken();
+    document.getElementById('token-display').textContent = tok ? tok.slice(0, 12) + '…' : 'none';
+    const ls = localStorage.getItem(LASTSYNC_KEY);
+    document.getElementById('last-sync-display').textContent = ls
+      ? new Date(parseInt(ls)).toLocaleString()
+      : 'never';
+    m.classList.add('show');
+  }
+  function closeSettings() { document.getElementById('settings-modal').classList.remove('show'); }
+
+  function resetAll() {
+    if (!confirm('clear local data + token? remote gist is untouched.')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(LASTSYNC_KEY);
+    closeSettings();
+    show('setup');
+    toast('cleared');
+  }
+
+  // Init
+  (async function init() {
+    if (!getToken()) {
+      show('setup');
+      setSyncStatus('offline', 'offline');
+      return;
+    }
+    show('name');
+    try {
+      await syncDown();
+    } catch (e) {
+      if (e.message === 'invalid token') {
+        localStorage.removeItem(TOKEN_KEY);
+        show('setup');
+        document.getElementById('setup-error').style.display = 'block';
+        document.getElementById('setup-error').textContent = 'token expired or invalid. paste a fresh one.';
+      }
+    }
+  })();
+</script>
+</body>
+</html>
