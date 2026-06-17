@@ -375,6 +375,10 @@
       <span class="label">last sync</span>
       <span class="value" id="last-sync-display">never</span>
     </div>
+    <div class="modal-row" id="last-error-row" style="display:none">
+      <span class="label">last error</span>
+      <span class="value" id="last-error-display" style="max-width: 60%; text-align: right; word-break: break-word; white-space: normal;"></span>
+    </div>
     <div class="actions">
       <button class="text-btn" onclick="closeSettings(); show('setup');">change token</button>
       <button class="text-btn danger" onclick="resetAll()">reset everything</button>
@@ -423,15 +427,31 @@
     if (txt) txt.textContent = text;
   }
 
-  async function fetchRemote() {
+  async function ghApi(method, body) {
     const token = getToken();
-    if (!token) return null;
+    if (!token) throw new Error('no token');
     const r = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github+json' }
+      method,
+      headers: {
+        'Authorization': `token ${token}`,
+        'Accept': 'application/vnd.github+json',
+        ...(body ? { 'Content-Type': 'application/json' } : {})
+      },
+      ...(body ? { body: JSON.stringify(body) } : {})
     });
-    if (r.status === 401) throw new Error('invalid token');
-    if (!r.ok) throw new Error(`gist fetch failed (${r.status})`);
-    const gist = await r.json();
+    if (!r.ok) {
+      let detail = '';
+      try { const j = await r.json(); detail = j.message ? ` — ${j.message}` : ''; } catch {}
+      if (r.status === 401) throw new Error(`401 invalid token${detail}`);
+      if (r.status === 403) throw new Error(`403 forbidden${detail} (token missing gist scope?)`);
+      if (r.status === 404) throw new Error(`404 gist not found${detail}`);
+      throw new Error(`${r.status} ${method}${detail}`);
+    }
+    return r.json();
+  }
+
+  async function fetchRemote() {
+    const gist = await ghApi('GET');
     const file = gist.files[GIST_FILE];
     if (!file) return { days: {} };
     const parsed = JSON.parse(file.content || '{"days":{}}');
@@ -440,18 +460,7 @@
   }
 
   async function pushRemote(state) {
-    const token = getToken();
-    if (!token) return;
-    const r = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `token ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github+json'
-      },
-      body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(state, null, 2) } } })
-    });
-    if (!r.ok) throw new Error(`gist push failed (${r.status})`);
+    await ghApi('PATCH', { files: { [GIST_FILE]: { content: JSON.stringify(state, null, 2) } } });
   }
 
   function mergeStates(a, b) {
@@ -499,8 +508,10 @@
       setSyncStatus('synced', 'synced');
       render();
     } catch (e) {
-      setSyncStatus('error', 'sync failed');
-      toast('saved locally — will retry on next visit');
+      console.error('sync failed:', e);
+      localStorage.setItem('vapeLog_lastError', e.message);
+      setSyncStatus('error', e.message.slice(0, 60));
+      toast('saved locally · ' + e.message);
     }
   }
 
@@ -658,6 +669,14 @@
     document.getElementById('last-sync-display').textContent = ls
       ? new Date(parseInt(ls)).toLocaleString()
       : 'never';
+    const lastErr = localStorage.getItem('vapeLog_lastError');
+    const errRow = document.getElementById('last-error-row');
+    if (lastErr) {
+      errRow.style.display = 'flex';
+      document.getElementById('last-error-display').textContent = lastErr;
+    } else {
+      errRow.style.display = 'none';
+    }
     m.classList.add('show');
   }
   function closeSettings() { document.getElementById('settings-modal').classList.remove('show'); }
