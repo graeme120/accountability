@@ -521,26 +521,32 @@
   }
 
   async function logEntry(person, day, vaped) {
+    logDebug({ event: 'logEntry-start', person, day, vaped });
+    if (!person) { logDebug({ event: 'logEntry-no-person' }); return; }
     const local = getLocal();
     if (!local.days[day]) local.days[day] = {};
     local.days[day][person] = vaped;
     setLocal(local);
     render();
 
-    if (!getToken()) { toast('saved locally (no sync)'); return; }
+    if (!getToken()) { logDebug({ event: 'logEntry-no-token' }); toast('saved locally (no sync)'); return; }
 
     setSyncStatus('syncing', 'syncing…');
     try {
+      logDebug({ event: 'about-to-fetch' });
       const remote = await fetchRemote();
       if (!remote.days[day]) remote.days[day] = {};
       remote.days[day][person] = vaped;
+      logDebug({ event: 'about-to-push', payloadDays: Object.keys(remote.days).length });
       await pushRemote(remote);
+      logDebug({ event: 'push-success' });
       setLocal(remote);
       localStorage.setItem(LASTSYNC_KEY, Date.now().toString());
       setSyncStatus('synced', 'synced');
       render();
     } catch (e) {
       console.error('sync failed:', e);
+      logDebug({ event: 'sync-caught', error: e.message });
       localStorage.setItem('vapeLog_lastError', e.message);
       setSyncStatus('error', e.message.slice(0, 60));
       toast('saved locally · ' + e.message);
@@ -607,8 +613,13 @@
   document.querySelectorAll('#logger-question .yn-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const vaped = btn.dataset.vaped === 'true';
+      logDebug({ event: 'yn-click', vaped, currentUser, day: yesterdayKey() });
       document.querySelectorAll('#logger-question .yn-btn').forEach(b => b.disabled = true);
-      await logEntry(currentUser, yesterdayKey(), vaped);
+      try {
+        await logEntry(currentUser, yesterdayKey(), vaped);
+      } catch (e) {
+        logDebug({ event: 'logEntry-threw', error: e.message });
+      }
       document.querySelectorAll('#logger-question .yn-btn').forEach(b => b.disabled = false);
       toast(vaped ? "logged. fresh start today." : "nice. keep it going.");
       setLoggerState('picker');
