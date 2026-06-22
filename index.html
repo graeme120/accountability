@@ -118,11 +118,19 @@
     border-radius: 3px;
     flex-shrink: 0;
     transition: transform 0.1s;
+    border: none;
+    cursor: pointer;
   }
   .cell:hover { transform: scale(1.4); }
+  .cell:focus-visible { outline: 2px solid #111827; outline-offset: 2px; }
   .cell.clean { background: #6366f1; }
   .cell.dirty { background: #fca5a5; }
   .cell.today { outline: 1.5px solid #4f46e5; outline-offset: 1px; }
+  .cell.future {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+  .cell.future:hover { transform: none; }
   .legend { display: flex; gap: 14px; margin-top: 18px; font-size: 12px; color: #6b7280; flex-wrap: wrap; }
   .legend-item { display: flex; align-items: center; gap: 6px; }
   .legend-dot { width: 11px; height: 11px; border-radius: 3px; }
@@ -359,6 +367,21 @@
   </div>
 </div>
 
+<!-- Day edit modal -->
+<div class="modal-backdrop" id="day-modal" onclick="if(event.target===this)closeDayModal()">
+  <div class="modal">
+    <h2 id="day-modal-title">log a day</h2>
+    <p class="subtitle" id="day-modal-subtitle" style="margin-bottom:18px"></p>
+    <div class="yn-buttons">
+      <button class="yn-btn no" id="day-modal-no">no</button>
+      <button class="yn-btn yes" id="day-modal-yes">yes</button>
+    </div>
+    <div class="actions">
+      <button class="text-btn subtle" onclick="closeDayModal()">cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Settings modal -->
 <div class="modal-backdrop" id="settings-modal" onclick="if(event.target===this)closeSettings()">
   <div class="modal">
@@ -405,6 +428,7 @@
   const LASTSYNC_KEY = 'vapeLog_lastSync';
 
   let currentUser = null;
+  let selectedDayEdit = null;
 
   const getLocal = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"days":{}}');
   const setLocal = (d) => localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
@@ -423,6 +447,10 @@
     return ymd(d);
   };
   const prettyDate = (date) => date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toLowerCase();
+  const parseDayKey = (key) => {
+    const [year, month, day] = key.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
 
   function setSyncStatus(state, text) {
     const el = document.getElementById('sync-status');
@@ -627,6 +655,47 @@
     });
   });
 
+  document.getElementById('day-modal-no').addEventListener('click', () => submitDayModal(false));
+  document.getElementById('day-modal-yes').addEventListener('click', () => submitDayModal(true));
+
+  function openDayModal(person, day) {
+    const todayKey = ymd(new Date());
+    if (day >= todayKey) {
+      toast('log past days only');
+      return;
+    }
+    selectedDayEdit = { person, day };
+    const data = getLocal();
+    const current = data.days[day] && data.days[day][person];
+    const date = parseDayKey(day);
+    const title = `${person}, did you vape?`;
+    const existing = current === undefined ? '' : current ? ' currently logged as yes.' : ' currently logged as no.';
+    document.getElementById('day-modal-title').textContent = title.toLowerCase();
+    document.getElementById('day-modal-subtitle').textContent = `${prettyDate(date)}.${existing}`;
+    document.getElementById('day-modal').classList.add('show');
+  }
+
+  function closeDayModal() {
+    selectedDayEdit = null;
+    document.getElementById('day-modal').classList.remove('show');
+  }
+
+  async function submitDayModal(vaped) {
+    if (!selectedDayEdit) return;
+    const { person, day } = selectedDayEdit;
+    document.querySelectorAll('#day-modal .yn-btn').forEach(b => b.disabled = true);
+    try {
+      await logEntry(person, day, vaped);
+      toast(vaped ? 'logged yes' : 'logged no');
+      closeDayModal();
+    } catch (e) {
+      logDebug({ event: 'day-modal-log-threw', error: e.message });
+      toast('log failed');
+    } finally {
+      document.querySelectorAll('#day-modal .yn-btn').forEach(b => b.disabled = false);
+    }
+  }
+
   function render() {
     const data = getLocal();
 
@@ -663,10 +732,17 @@
       const cells = document.createElement('div');
       cells.className = 'day-cells';
       days.forEach(day => {
-        const cell = document.createElement('div');
+        const cell = document.createElement('button');
+        cell.type = 'button';
         cell.className = 'cell';
         cell.title = `${person} · ${day}`;
         if (day === todayKey) cell.classList.add('today');
+        if (day >= todayKey) {
+          cell.classList.add('future');
+          cell.title += ' · past days only';
+        } else {
+          cell.addEventListener('click', () => openDayModal(person, day));
+        }
         const val = data.days[day] && data.days[day][person];
         if (val !== undefined) {
           cell.classList.add(val ? 'dirty' : 'clean');

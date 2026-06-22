@@ -33,6 +33,8 @@ That's it. The token stays in your device's `localStorage`. You can clear it any
 
 The dashboard auto-syncs on open. Hit "refresh" to pull in the others' latest logs.
 
+To backfill a missed day, click any past square in the grid and answer yes/no for that person and date.
+
 ## Local development
 
 It's a single static HTML file. Just open `index.html` in a browser. Skip the token entry and click "just view (offline)" to use localStorage-only mode.
