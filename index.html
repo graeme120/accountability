@@ -85,56 +85,59 @@
 
   /* Badges */
   .badges-section {
-    background: white;
-    border-radius: 16px;
-    padding: 20px 22px 18px;
+    padding: 0;
     margin-bottom: 14px;
   }
   .badge-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(8, minmax(68px, 1fr));
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
   }
   .badge {
     min-width: 0;
     border: 1px solid #eef0f4;
     background: #fbfcff;
     border-radius: 8px;
-    padding: 10px 6px 9px;
+    padding: 8px 4px 7px;
     text-align: center;
     color: #374151;
   }
   .badge svg {
-    width: 48px;
-    height: 48px;
-    margin: 0 auto 6px;
+    width: 38px;
+    height: 38px;
+    margin: 0 auto 5px;
     display: block;
   }
   .badge-label {
     display: block;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     color: #374151;
   }
   .badge-name {
     display: block;
     margin-top: 2px;
-    font-size: 10px;
+    font-size: 9px;
     color: #6b7280;
     line-height: 1.2;
-    min-height: 24px;
+    min-height: 22px;
   }
   .badge.locked {
-    background: #f6f7f9;
-    border-color: #edeff3;
+    background: #e5e7eb;
+    border-color: #d1d5db;
   }
-  .badge.locked svg {
-    filter: grayscale(1) brightness(0.58);
-    opacity: 0.9;
+  .badge.locked svg * {
+    fill: #4b5563 !important;
+    stroke: #4b5563 !important;
+  }
+  .badge.locked svg [fill="none"] {
+    fill: none !important;
   }
   .badge.locked .badge-label,
   .badge.locked .badge-name {
-    color: #6b7280;
+    color: #4b5563;
   }
 
   .pending-card {
@@ -345,9 +348,6 @@
   .modal-row .label { font-size: 14px; color: #374151; }
   .modal-row .value { font-size: 12px; color: #9ca3af; font-family: monospace; }
 
-  @media (max-width: 520px) {
-    .badge-row { grid-template-columns: repeat(2, 1fr); }
-  }
 </style>
 </head>
 <body>
@@ -890,11 +890,14 @@
     row.innerHTML = BADGES.map(badge => {
       const unlocked = streak >= badge.days;
       const status = unlocked ? 'unlocked' : 'locked';
+      const title = unlocked ? `${badge.days} days · ${badge.name}` : '???';
+      const label = unlocked ? `${badge.days} days` : '???';
+      const name = unlocked ? badge.name : '???';
       return `
-        <div class="badge ${status}" title="${badge.days} days · ${badge.name}">
+        <div class="badge ${status}" title="${title}">
           ${badge.svg}
-          <span class="badge-label">${badge.days} days</span>
-          <span class="badge-name">${badge.name}</span>
+          <span class="badge-label">${label}</span>
+          <span class="badge-name">${name}</span>
         </div>
       `;
     }).join('');
