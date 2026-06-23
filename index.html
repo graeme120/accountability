@@ -83,6 +83,60 @@
     backdrop-filter: blur(8px);
   }
 
+  /* Badges */
+  .badges-section {
+    background: white;
+    border-radius: 16px;
+    padding: 20px 22px 18px;
+    margin-bottom: 14px;
+  }
+  .badge-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .badge {
+    min-width: 0;
+    border: 1px solid #eef0f4;
+    background: #fbfcff;
+    border-radius: 8px;
+    padding: 10px 6px 9px;
+    text-align: center;
+    color: #374151;
+  }
+  .badge svg {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 6px;
+    display: block;
+  }
+  .badge-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #374151;
+  }
+  .badge-name {
+    display: block;
+    margin-top: 2px;
+    font-size: 10px;
+    color: #6b7280;
+    line-height: 1.2;
+    min-height: 24px;
+  }
+  .badge.locked {
+    background: #f6f7f9;
+    border-color: #edeff3;
+  }
+  .badge.locked svg {
+    filter: grayscale(1) brightness(0.58);
+    opacity: 0.9;
+  }
+  .badge.locked .badge-label,
+  .badge.locked .badge-name {
+    color: #6b7280;
+  }
+
   .pending-card {
     background: white;
     border-radius: 12px;
@@ -290,6 +344,10 @@
   .modal-row:first-of-type { border-top: none; }
   .modal-row .label { font-size: 14px; color: #374151; }
   .modal-row .value { font-size: 12px; color: #9ca3af; font-family: monospace; }
+
+  @media (max-width: 520px) {
+    .badge-row { grid-template-columns: repeat(2, 1fr); }
+  }
 </style>
 </head>
 <body>
@@ -326,6 +384,11 @@
       <div class="streak-number" id="streak-num">0</div>
       <div class="streak-label" id="streak-text">days vape-free together</div>
       <div class="status-pill" id="status-pill"></div>
+    </div>
+
+    <div class="badges-section">
+      <div class="section-title">badges</div>
+      <div class="badge-row" id="badge-row"></div>
     </div>
 
     <div id="pending-section"></div>
@@ -426,6 +489,48 @@
   const STORAGE_KEY = 'vapeLog_v2';
   const TOKEN_KEY = 'vapeLog_token';
   const LASTSYNC_KEY = 'vapeLog_lastSync';
+  const BADGES = [
+    {
+      days: 5,
+      name: 'first spark',
+      svg: `<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="25" fill="#fef3c7"/><circle cx="32" cy="32" r="20" fill="#f59e0b"/><path d="M32 10l3.9 13.2L49 18.8l-7.4 11.6L53 37.8l-13.7.6L41 52 32 41.7 23 52l1.7-13.6-13.7-.6 11.4-7.4L15 18.8l13.1 4.4L32 10z" fill="#fff7ed"/><circle cx="32" cy="32" r="7" fill="#f97316"/></svg>`
+    },
+    {
+      days: 10,
+      name: 'tiny trophy',
+      svg: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M19 10h26v16c0 8-5.8 14.6-13 14.6S19 34 19 26V10z" fill="#facc15"/><path d="M17 14H8v6c0 7.5 4.8 13 12 13v-6c-3.9 0-6-2.8-6-7v-1h3v-5zM47 14h9v6c0 7.5-4.8 13-12 13v-6c3.9 0 6-2.8 6-7v-1h-3v-5z" fill="#fde68a"/><path d="M28 40h8v9h10v6H18v-6h10v-9z" fill="#d97706"/><path d="M32 17l3 6 6 .9-4.5 4.3 1.1 6-5.6-2.9-5.6 2.9 1.1-6L23 23.9l6-.9 3-6z" fill="#fff"/></svg>`
+    },
+    {
+      days: 14,
+      name: 'two-week bloom',
+      svg: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 9c5 7.5 5 13.1 0 16.8-5-3.7-5-9.3 0-16.8z" fill="#fb7185"/><path d="M50 19c-1.7 9-5.6 13.1-11.6 12.5-.8-6 3.1-10.2 11.6-12.5z" fill="#f97316"/><path d="M56 40c-8.6 3.1-14.2 2.2-16.6-2.8 4.5-4.1 10-3.2 16.6 2.8z" fill="#fbbf24"/><path d="M32 55c-5-7.5-5-13.1 0-16.8 5 3.7 5 9.3 0 16.8z" fill="#22c55e"/><path d="M8 40c8.6 3.1 14.2 2.2 16.6-2.8-4.5-4.1-10-3.2-16.6 2.8z" fill="#14b8a6"/><path d="M14 19c1.7 9 5.6 13.1 11.6 12.5.8-6-3.1-10.2-11.6-12.5z" fill="#60a5fa"/><circle cx="32" cy="32" r="9" fill="#fff7ed"/><circle cx="32" cy="32" r="5" fill="#f59e0b"/></svg>`
+    },
+    {
+      days: 30,
+      name: 'moon medal',
+      svg: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M20 6h9l3 12-7 4-5-16zM44 6h-9l-3 12 7 4 5-16z" fill="#38bdf8"/><circle cx="32" cy="36" r="20" fill="#2563eb"/><path d="M39 20c-8.5 3-12.8 12.9-8.6 21.1 2.3 4.5 6.5 7.4 11.1 8-3 3-7.2 4.9-11.8 4.9-9.2 0-16.7-7.5-16.7-16.7S20.5 20.6 29.7 20.6c3.4 0 6.6 1 9.3 2.8z" fill="#dbeafe"/><circle cx="42" cy="32" r="3" fill="#bfdbfe"/><circle cx="48" cy="39" r="2" fill="#bfdbfe"/></svg>`
+    },
+    {
+      days: 60,
+      name: 'steady gem',
+      svg: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M14 20l10-10h16l10 10-18 34L14 20z" fill="#a78bfa"/><path d="M14 20h36L32 54 14 20z" fill="#7c3aed"/><path d="M24 10l8 10 8-10H24z" fill="#ddd6fe"/><path d="M14 20l10-10 8 10H14zM50 20L40 10l-8 10h18z" fill="#c4b5fd"/><path d="M32 20v34L24 20h8z" fill="#8b5cf6"/><path d="M32 20h8l-8 34V20z" fill="#6d28d9"/></svg>`
+    },
+    {
+      days: 90,
+      name: 'sunrise shield',
+      svg: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6l22 8v16c0 13.5-8.4 23.1-22 28C18.4 53.1 10 43.5 10 30V14l22-8z" fill="#0f766e"/><path d="M16 31h32c-1.2 9.2-6.5 15.7-16 19.8C22.5 46.7 17.2 40.2 16 31z" fill="#14b8a6"/><path d="M22 31a10 10 0 0120 0H22z" fill="#fbbf24"/><path d="M20 24l4 2M44 26l4-2M32 14v5M24 18l3 4M40 18l-3 4" stroke="#fde68a" stroke-width="3" stroke-linecap="round"/><path d="M19 36h26" stroke="#ccfbf1" stroke-width="3" stroke-linecap="round"/></svg>`
+    },
+    {
+      days: 120,
+      name: 'orbit star',
+      svg: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8l5.5 14.7L53 23.4 40.9 33.3 45 48.5 32 40 19 48.5l4.1-15.2L11 23.4l15.5-.7L32 8z" fill="#ec4899"/><path d="M17.5 43.5C9.8 38 6.2 31.5 9.2 27.1c4.3-6.2 19.2-3.2 33.2 6.7 7.8 5.5 12 11.6 9.3 15.5-2.1 3-8.7 2.9-16.5.2" fill="none" stroke="#f9a8d4" stroke-width="3" stroke-linecap="round"/><circle cx="48" cy="47" r="4" fill="#fef3c7"/><path d="M32 20l2.3 6.2 6.6.3-5.1 4.2 1.7 6.4-5.5-3.6-5.5 3.6 1.7-6.4-5.1-4.2 6.6-.3L32 20z" fill="#fff"/></svg>`
+    },
+    {
+      days: 150,
+      name: 'crown cloud',
+      svg: `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M18 27l6-12 8 10 8-10 6 12v11H18V27z" fill="#f59e0b"/><path d="M19 33h26v8H19z" fill="#fbbf24"/><circle cx="24" cy="15" r="4" fill="#fde68a"/><circle cx="32" cy="24" r="4" fill="#fde68a"/><circle cx="40" cy="15" r="4" fill="#fde68a"/><path d="M20 48c-5.3 0-9-3.1-9-7.3 0-3.8 3.1-6.8 7.3-7.1 1.8-5.6 6.7-9.6 12.7-9.6 6.5 0 11.8 4.6 13.1 10.7 5 .2 8.9 3.8 8.9 8.2 0 4.8-4.3 8.1-9.9 8.1H20z" fill="#bae6fd"/><path d="M24 43h16" stroke="#0284c7" stroke-width="3" stroke-linecap="round"/></svg>`
+    }
+  ];
 
   let currentUser = null;
   let selectedDayEdit = null;
@@ -770,6 +875,7 @@
     document.getElementById('streak-num').textContent = streak;
     document.getElementById('streak-text').textContent = streak === 1 ? 'day vape-free together' : 'days vape-free together';
     card.classList.toggle('zero', streak === 0);
+    renderBadges(streak);
 
     const logged = PEOPLE.filter(p => yData[p] !== undefined);
     const missing = PEOPLE.filter(p => yData[p] === undefined);
@@ -777,6 +883,21 @@
     document.getElementById('pending-section').innerHTML = (missing.length > 0 && missing.length < 3)
       ? `<div class="pending-card"><span>still need to log:</span><span class="who">${missing.join(', ')}</span></div>`
       : '';
+  }
+
+  function renderBadges(streak) {
+    const row = document.getElementById('badge-row');
+    row.innerHTML = BADGES.map(badge => {
+      const unlocked = streak >= badge.days;
+      const status = unlocked ? 'unlocked' : 'locked';
+      return `
+        <div class="badge ${status}" title="${badge.days} days · ${badge.name}">
+          ${badge.svg}
+          <span class="badge-label">${badge.days} days</span>
+          <span class="badge-name">${badge.name}</span>
+        </div>
+      `;
+    }).join('');
   }
 
   function openSettings() {
