@@ -796,6 +796,55 @@
     }
   }
 
+  function isFullyLogged(dayData) {
+    return dayData && PEOPLE.every(p => dayData[p] !== undefined);
+  }
+
+  function isAllClean(dayData) {
+    return PEOPLE.every(p => dayData[p] === false);
+  }
+
+  function calculateCurrentStreak(data) {
+    let streak = 0;
+    let foundCompleteDay = false;
+    for (let i = 1; i < 365; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dayData = data.days[ymd(d)];
+      if (!isFullyLogged(dayData)) {
+        if (foundCompleteDay) break;
+        continue;
+      }
+      foundCompleteDay = true;
+      if (isAllClean(dayData)) streak++;
+      else break;
+    }
+    return streak;
+  }
+
+  function calculateBestStreak(data) {
+    const dayKeys = Object.keys(data.days || {}).sort();
+    if (!dayKeys.length) return 0;
+
+    let best = 0;
+    let run = 0;
+    const d = parseDayKey(dayKeys[0]);
+    const end = new Date();
+    end.setHours(0, 0, 0, 0);
+    end.setDate(end.getDate() - 1);
+
+    for (; d <= end; d.setDate(d.getDate() + 1)) {
+      const dayData = data.days[ymd(d)];
+      if (isFullyLogged(dayData) && isAllClean(dayData)) {
+        run++;
+        best = Math.max(best, run);
+      } else {
+        run = 0;
+      }
+    }
+    return best;
+  }
+
   function render() {
     const data = getLocal();
 
@@ -855,28 +904,13 @@
     });
 
     // Streak
-    let streak = 0;
-    let foundCompleteDay = false;
-    for (let i = 1; i < 365; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = ymd(d);
-      const dayData = data.days[key];
-      const fullyLogged = dayData && PEOPLE.every(p => dayData[p] !== undefined);
-      if (!fullyLogged) {
-        if (foundCompleteDay) break;
-        continue;
-      }
-      foundCompleteDay = true;
-      const allClean = PEOPLE.every(p => dayData[p] === false);
-      if (allClean) streak++;
-      else break;
-    }
+    const streak = calculateCurrentStreak(data);
+    const bestStreak = calculateBestStreak(data);
     const card = document.getElementById('streak-card');
     document.getElementById('streak-num').textContent = streak;
     document.getElementById('streak-text').textContent = streak === 1 ? 'day vape-free together' : 'days vape-free together';
     card.classList.toggle('zero', streak === 0);
-    renderBadges(streak);
+    renderBadges(Math.max(streak, bestStreak));
 
     const logged = PEOPLE.filter(p => yData[p] !== undefined);
     const missing = PEOPLE.filter(p => yData[p] === undefined);
