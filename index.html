@@ -856,12 +856,18 @@
 
     // Streak
     let streak = 0;
+    let foundCompleteDay = false;
     for (let i = 1; i < 365; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const key = ymd(d);
       const dayData = data.days[key];
-      if (!dayData) break;
+      const fullyLogged = dayData && PEOPLE.every(p => dayData[p] !== undefined);
+      if (!fullyLogged) {
+        if (foundCompleteDay) break;
+        continue;
+      }
+      foundCompleteDay = true;
       const allClean = PEOPLE.every(p => dayData[p] === false);
       if (allClean) streak++;
       else break;
