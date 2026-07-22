@@ -10,7 +10,8 @@ State lives in a **secret GitHub Gist** on `graeme120`. The app reads and writes
 
 ## Setup (one time, Graeme only)
 
-1. Generate a fine-grained PAT at https://github.com/settings/tokens?type=beta
+1. Sign in to GitHub as `graeme120`, then generate a fine-grained PAT at https://github.com/settings/tokens?type=beta
+   - **Resource owner:** `graeme120`
    - **Repository access:** none needed
    - **Account permissions → Gists:** Read and write
    - **Expiration:** 90 days (or longer if you trust the share channel)

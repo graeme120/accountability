@@ -359,7 +359,7 @@
         <label for="pat-input">github personal access token</label>
         <input type="password" id="pat-input" placeholder="github_pat_... or ghp_..." autocomplete="off" />
         <div class="help-text">
-          graeme: generate one at <a href="https://github.com/settings/tokens?type=beta" target="_blank">github.com/settings/tokens</a> with account permissions → gists → read and write, then share it via signal/imessage with brian and karla.
+          graeme: while signed in as graeme120, generate one at <a href="https://github.com/settings/tokens?type=beta" target="_blank">github.com/settings/tokens</a> with account permissions → gists → read and write, then share it via signal/imessage with brian and karla.
         </div>
       </div>
       <button class="primary-btn" id="setup-submit">connect</button>
@@ -479,6 +479,7 @@
 
 <script>
   const PEOPLE = ['Brian', 'Karla', 'Graeme'];
+  const GIST_OWNER = 'graeme120';
   const GIST_ID = '387432bdc79a415f7ec301a58aa5e7ec';
   const GIST_FILE = 'vapelog.json';
   const STORAGE_KEY = 'vapeLog_v2';
@@ -615,17 +616,21 @@
     }
     const xRateLimit = respHeaders['x-ratelimit-remaining'];
     const xOauthScopes = respHeaders['x-oauth-scopes'];
+    const xAcceptedScopes = respHeaders['x-accepted-oauth-scopes'];
     logDebug({
       method, url, status: r.status, ok: r.ok,
       reqBodyLen: bodyStr ? bodyStr.length : 0,
       respBodyPreview: respBody.slice(0, 300),
-      rateLimit: xRateLimit, scopes: xOauthScopes
+      rateLimit: xRateLimit, scopes: xOauthScopes, acceptedScopes: xAcceptedScopes
     });
     if (!r.ok) {
       let detail = '';
       try { const j = JSON.parse(respBody); detail = j.message ? ` — ${j.message}` : ''; } catch {}
+      if (method === 'PATCH' && (r.status === 403 || r.status === 404)) {
+        throw new Error(`${r.status} cannot write gist${detail}. Make the token while signed in as ${GIST_OWNER} with Gists read/write access.`);
+      }
       if (r.status === 401) throw new Error(`401 invalid token${detail}`);
-      if (r.status === 403) throw new Error(`403 forbidden${detail} (scopes: ${xOauthScopes || 'none'})`);
+      if (r.status === 403) throw new Error(`403 forbidden${detail}${xOauthScopes ? ` (scopes: ${xOauthScopes})` : ''}`);
       if (r.status === 404) throw new Error(`404 gist not found${detail}`);
       if (r.status === 422) throw new Error(`422 unprocessable${detail}`);
       throw new Error(`${r.status} ${method}${detail}`);
