@@ -484,6 +484,7 @@
   const STORAGE_KEY = 'vapeLog_v2';
   const TOKEN_KEY = 'vapeLog_token';
   const LASTSYNC_KEY = 'vapeLog_lastSync';
+  const PENDING_KEY = 'vapeLog_pending_v1';
   const BADGES = [
     {
       days: 5,
@@ -534,6 +535,8 @@
   const setLocal = (d) => localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
   const getToken = () => localStorage.getItem(TOKEN_KEY);
   const setToken = (t) => localStorage.setItem(TOKEN_KEY, t);
+  const getPending = () => JSON.parse(localStorage.getItem(PENDING_KEY) || '{}');
+  const setPending = (d) => localStorage.setItem(PENDING_KEY, JSON.stringify(d));
 
   const ymd = (date) => {
     const y = date.getFullYear();
@@ -569,6 +572,23 @@
   }
 
   const isInvalidTokenError = (error) => String(error?.message || error).startsWith('401 invalid token');
+
+  function pendingKey(person, day) {
+    return `${day}::${person}`;
+  }
+
+  function queuePending(person, day, vaped) {
+    const pending = getPending();
+    pending[pendingKey(person, day)] = { person, day, vaped, t: Date.now() };
+    setPending(pending);
+  }
+
+  function clearPending(keys) {
+    if (!keys.length) return;
+    const pending = getPending();
+    keys.forEach(key => delete pending[key]);
+    setPending(pending);
+  }
 
   async function ghApi(method, body) {
     const token = getToken();
@@ -626,12 +646,35 @@
     await ghApi('PATCH', { files: { [GIST_FILE]: { content: JSON.stringify(state, null, 2) } } });
   }
 
-  function mergeStates(a, b) {
-    const out = { days: { ...(a.days || {}) } };
-    for (const [day, people] of Object.entries(b.days || {})) {
-      out.days[day] = { ...(out.days[day] || {}), ...people };
+  function mergeLocalOnlyEntries(remote, local) {
+    const out = { days: { ...(remote.days || {}) } };
+    let added = 0;
+    for (const [day, people] of Object.entries(local.days || {})) {
+      out.days[day] = { ...(out.days[day] || {}) };
+      for (const [person, vaped] of Object.entries(people || {})) {
+        if (out.days[day][person] === undefined) {
+          out.days[day][person] = vaped;
+          added++;
+        }
+      }
     }
-    return out;
+    return { state: out, added };
+  }
+
+  function applyPendingEntries(state) {
+    const pending = getPending();
+    const entries = Object.entries(pending).sort((a, b) => (a[1].t || 0) - (b[1].t || 0));
+    const out = { days: { ...(state.days || {}) } };
+    let applied = 0;
+    for (const [, entry] of entries) {
+      if (!entry.person || !entry.day) continue;
+      out.days[entry.day] = { ...(out.days[entry.day] || {}) };
+      if (out.days[entry.day][entry.person] !== entry.vaped) {
+        out.days[entry.day][entry.person] = entry.vaped;
+        applied++;
+      }
+    }
+    return { state: out, applied, pendingKeys: entries.map(([key]) => key) };
   }
 
   async function syncDown() {
@@ -640,10 +683,25 @@
     try {
       const remote = await fetchRemote();
       const local = getLocal();
-      const merged = mergeStates(remote, local);
+      const localMerge = mergeLocalOnlyEntries(remote, local);
+      const pendingMerge = applyPendingEntries(localMerge.state);
+      const merged = pendingMerge.state;
+      const shouldPush = localMerge.added > 0 || pendingMerge.applied > 0;
+      if (shouldPush) {
+        await pushRemote(merged);
+        clearPending(pendingMerge.pendingKeys);
+      } else {
+        clearPending(pendingMerge.pendingKeys);
+      }
       setLocal(merged);
       localStorage.setItem(LASTSYNC_KEY, Date.now().toString());
-      setSyncStatus('synced', 'synced');
+      setSyncStatus('synced', shouldPush ? 'synced + uploaded' : 'synced');
+      localStorage.removeItem('vapeLog_lastError');
+      logDebug({
+        event: 'sync-success',
+        pushedLocalOnly: localMerge.added,
+        pushedPending: pendingMerge.applied
+      });
       return merged;
     } catch (e) {
       setSyncStatus('error', e.message);
@@ -658,6 +716,7 @@
     if (!local.days[day]) local.days[day] = {};
     local.days[day][person] = vaped;
     setLocal(local);
+    queuePending(person, day, vaped);
     render();
 
     if (!getToken()) { logDebug({ event: 'logEntry-no-token' }); toast('saved locally (no sync)'); return; }
@@ -670,9 +729,11 @@
       remote.days[day][person] = vaped;
       logDebug({ event: 'about-to-push', payloadDays: Object.keys(remote.days).length });
       await pushRemote(remote);
+      clearPending([pendingKey(person, day)]);
       logDebug({ event: 'push-success' });
       setLocal(remote);
       localStorage.setItem(LASTSYNC_KEY, Date.now().toString());
+      localStorage.removeItem('vapeLog_lastError');
       setSyncStatus('synced', 'synced');
       render();
     } catch (e) {
@@ -976,6 +1037,9 @@
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(LASTSYNC_KEY);
+    localStorage.removeItem(PENDING_KEY);
+    localStorage.removeItem('vapeLog_lastError');
+    localStorage.removeItem('vapeLog_debug');
     closeSettings();
     show('setup');
     toast('cleared');
