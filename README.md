@@ -15,6 +15,7 @@ State lives in a **secret GitHub Gist** on `graeme120`. The app reads and writes
    - **Account permissions → Gists:** Read and write
    - **Expiration:** 90 days (or longer if you trust the share channel)
 2. Share that token with Brian and Karla via Signal/iMessage (not Slack/email)
+3. Revoke and replace the token immediately if it is pasted anywhere public or semi-public.
 
 ## Setup (one time, each person)
 

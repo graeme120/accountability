@@ -357,9 +357,9 @@
       <div id="setup-error" style="display:none" class="error-msg"></div>
       <div class="input-group">
         <label for="pat-input">github personal access token</label>
-        <input type="password" id="pat-input" placeholder="github_pat_..." autocomplete="off" />
+        <input type="password" id="pat-input" placeholder="github_pat_... or ghp_..." autocomplete="off" />
         <div class="help-text">
-          graeme: generate one at <a href="https://github.com/settings/tokens?type=beta" target="_blank">github.com/settings/tokens</a> with <strong>gist</strong> scope, then share it via signal/imessage with brian and karla.
+          graeme: generate one at <a href="https://github.com/settings/tokens?type=beta" target="_blank">github.com/settings/tokens</a> with account permissions → gists → read and write, then share it via signal/imessage with brian and karla.
         </div>
       </div>
       <button class="primary-btn" id="setup-submit">connect</button>
@@ -568,6 +568,8 @@
     localStorage.setItem('vapeLog_debug', JSON.stringify(log.slice(0, 10)));
   }
 
+  const isInvalidTokenError = (error) => String(error?.message || error).startsWith('401 invalid token');
+
   async function ghApi(method, body) {
     const token = getToken();
     if (!token) throw new Error('no token');
@@ -578,8 +580,9 @@
       r = await fetch(url, {
         method,
         headers: {
-          'Authorization': `token ${token}`,
+          'Authorization': `Bearer ${token}`,
           'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2026-03-10',
           ...(body ? { 'Content-Type': 'application/json' } : {})
         },
         ...(bodyStr ? { body: bodyStr } : {})
@@ -723,7 +726,7 @@
     } catch (e) {
       localStorage.removeItem(TOKEN_KEY);
       err.style.display = 'block';
-      err.textContent = e.message === 'invalid token' ? 'token rejected. double-check it has gist scope.' : 'connection failed: ' + e.message;
+      err.textContent = isInvalidTokenError(e) ? 'token rejected. double-check it has gists read/write access.' : 'connection failed: ' + e.message;
       btn.textContent = 'connect'; btn.disabled = false;
     }
   });
@@ -990,7 +993,7 @@
       await syncDown();
       render();
     } catch (e) {
-      if (e.message === 'invalid token') {
+      if (isInvalidTokenError(e)) {
         localStorage.removeItem(TOKEN_KEY);
         show('setup');
         document.getElementById('setup-error').style.display = 'block';
