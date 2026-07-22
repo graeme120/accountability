@@ -8,6 +8,8 @@ Open the app, pick your name, answer "did you vape yesterday" yes/no. The dashbo
 
 State lives in a **secret GitHub Gist** on `graeme120`. The app reads and writes the gist via the GitHub API using a Personal Access Token (PAT) that each person stores in their browser's `localStorage` (never in source code).
 
+The app reads from the raw gist URL to avoid spending GitHub API quota on refreshes, and only uses the PAT-backed API when it needs to upload a log.
+
 ## Setup (one time, Graeme only)
 
 1. Sign in to GitHub as `graeme120`, then generate a fine-grained PAT at https://github.com/settings/tokens?type=beta
