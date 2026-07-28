@@ -672,6 +672,19 @@
     try { return JSON.parse(respBody); } catch { return null; }
   }
 
+  function parseGistFileState(gist) {
+    const file = gist.files[GIST_FILE];
+    if (!file) return { days: {} };
+    const parsed = JSON.parse(file.content || '{"days":{}}');
+    if (!parsed.days) parsed.days = {};
+    return parsed;
+  }
+
+  async function fetchRemoteFromApi() {
+    const gist = await ghApi('GET');
+    return parseGistFileState(gist);
+  }
+
   async function fetchRemote() {
     try {
       const r = await fetch(`${RAW_GIST_URL}?t=${Date.now()}`, { cache: 'no-store' });
@@ -692,12 +705,7 @@
       logDebug({ method: 'GET_RAW', url: RAW_GIST_URL, error: e.message });
     }
 
-    const gist = await ghApi('GET');
-    const file = gist.files[GIST_FILE];
-    if (!file) return { days: {} };
-    const parsed = JSON.parse(file.content || '{"days":{}}');
-    if (!parsed.days) parsed.days = {};
-    return parsed;
+    return fetchRemoteFromApi();
   }
 
   async function pushRemote(state) {
@@ -782,14 +790,20 @@
     setSyncStatus('syncing', 'syncing…');
     try {
       logDebug({ event: 'about-to-fetch' });
-      const remote = await fetchRemote();
-      if (!remote.days[day]) remote.days[day] = {};
-      remote.days[day][person] = vaped;
-      logDebug({ event: 'about-to-push', payloadDays: Object.keys(remote.days).length });
-      await pushRemote(remote);
-      clearPending([pendingKey(person, day)]);
+      const remote = await fetchRemoteFromApi();
+      const localMerge = mergeLocalOnlyEntries(remote, getLocal());
+      const pendingMerge = applyPendingEntries(localMerge.state);
+      const merged = pendingMerge.state;
+      logDebug({
+        event: 'about-to-push',
+        payloadDays: Object.keys(merged.days).length,
+        pushedLocalOnly: localMerge.added,
+        pushedPending: pendingMerge.applied
+      });
+      await pushRemote(merged);
+      clearPending(pendingMerge.pendingKeys);
       logDebug({ event: 'push-success' });
-      setLocal(remote);
+      setLocal(merged);
       localStorage.setItem(LASTSYNC_KEY, Date.now().toString());
       localStorage.removeItem('vapeLog_lastError');
       setSyncStatus('synced', 'synced');
