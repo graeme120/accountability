@@ -2,7 +2,7 @@
 
 A tiny vape accountability tracker for Brian, Karla, and Graeme.
 
-Open the app, pick your name, answer "did you vape yesterday" yes/no. The dashboard shows a 30-day grid for all three of us plus our collective streak (consecutive days where everyone logged "no").
+Open the app, pick your name, answer "did you vape yesterday" yes/no. The dashboard shows a horizontally scrollable history grid for all three of us plus our collective streak (consecutive days where everyone logged "no").
 
 ## How sync works
 
@@ -37,7 +37,7 @@ That's it. The token stays in your device's `localStorage`. You can clear it any
 
 The dashboard auto-syncs on open. Hit "refresh" to pull in the others' latest logs.
 
-To backfill a missed day, click any past square in the grid and answer yes/no for that person and date.
+To backfill a missed day, scroll the grid horizontally, click any past square, and answer yes/no for that person and date. If you reach the oldest visible square, the grid adds more past days to the left.
 
 ## Local development
 

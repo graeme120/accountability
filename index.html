@@ -160,10 +160,23 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
-  .grid-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
-  .grid-row:last-child { margin-bottom: 0; }
-  .name-label { width: 60px; font-size: 14px; color: #1f2937; font-weight: 500; }
-  .day-cells { display: flex; gap: 3px; flex: 1; overflow-x: auto; }
+  .history-grid {
+    display: grid;
+    grid-template-columns: 60px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .name-column,
+  .day-column {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .day-column {
+    overflow-x: auto;
+    padding: 2px 1px 4px;
+  }
+  .name-label { width: 60px; height: 14px; line-height: 14px; font-size: 14px; color: #1f2937; font-weight: 500; }
+  .day-cells { display: flex; gap: 3px; width: max-content; }
   .cell {
     width: 14px;
     height: 14px;
@@ -389,7 +402,7 @@
     <div id="pending-section"></div>
 
     <div class="grid-section">
-      <div class="section-title">last 30 days</div>
+      <div class="section-title" id="grid-title">history</div>
       <div id="grid"></div>
       <div class="legend">
         <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div>clean</div>
@@ -488,6 +501,7 @@
   const LASTSYNC_KEY = 'vapeLog_lastSync';
   const PENDING_KEY = 'vapeLog_pending_v1';
   const RATE_LIMIT_RESET_KEY = 'vapeLog_rateLimitReset';
+  const GRID_BATCH_DAYS = 60;
   const BADGES = [
     {
       days: 5,
@@ -533,6 +547,8 @@
 
   let currentUser = null;
   let selectedDayEdit = null;
+  let gridEarliestDayKey = null;
+  let gridScrollLeftAfterRender = null;
 
   const getLocal = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"days":{}}');
   const setLocal = (d) => localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
@@ -561,6 +577,46 @@
     const [year, month, day] = key.split('-').map(Number);
     return new Date(year, month - 1, day);
   };
+  const isDayKey = (key) => /^\d{4}-\d{2}-\d{2}$/.test(key) && ymd(parseDayKey(key)) === key;
+
+  function buildGridDays(data) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(today);
+    start.setDate(start.getDate() - (GRID_BATCH_DAYS - 1));
+
+    if (gridEarliestDayKey && isDayKey(gridEarliestDayKey)) {
+      const d = parseDayKey(gridEarliestDayKey);
+      if (d < start) start.setTime(d.getTime());
+    }
+
+    Object.keys(data.days || {}).forEach(key => {
+      if (!isDayKey(key)) return;
+      const d = parseDayKey(key);
+      if (d < start) start.setTime(d.getTime());
+    });
+
+    const days = [];
+    for (const d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
+      days.push(ymd(d));
+    }
+    return days;
+  }
+
+  function getGridCellStep(scroller) {
+    const row = scroller.querySelector('.day-cells');
+    if (!row || row.children.length < 2) return 17;
+    return row.children[1].offsetLeft - row.children[0].offsetLeft || 17;
+  }
+
+  function extendGridHistory(firstDay, scroller) {
+    if (!firstDay || !scroller) return;
+    const start = parseDayKey(firstDay);
+    start.setDate(start.getDate() - GRID_BATCH_DAYS);
+    gridEarliestDayKey = ymd(start);
+    gridScrollLeftAfterRender = scroller.scrollLeft + (GRID_BATCH_DAYS * getGridCellStep(scroller));
+    render();
+  }
 
   function setSyncStatus(state, text) {
     const el = document.getElementById('sync-status');
@@ -997,23 +1053,23 @@
     });
 
     // Grid
-    const DAYS = 30;
     const grid = document.getElementById('grid');
+    const existingDayColumn = grid.querySelector('.day-column');
+    const previousScrollLeft = existingDayColumn ? existingDayColumn.scrollLeft : null;
     grid.innerHTML = '';
-    const days = [];
-    for (let i = DAYS - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      days.push(ymd(d));
-    }
+    const days = buildGridDays(data);
     const todayKey = ymd(new Date());
+    const historyGrid = document.createElement('div');
+    historyGrid.className = 'history-grid';
+    const nameColumn = document.createElement('div');
+    nameColumn.className = 'name-column';
+    const dayColumn = document.createElement('div');
+    dayColumn.className = 'day-column';
     PEOPLE.forEach(person => {
-      const row = document.createElement('div');
-      row.className = 'grid-row';
       const label = document.createElement('div');
       label.className = 'name-label';
       label.textContent = person;
-      row.appendChild(label);
+      nameColumn.appendChild(label);
       const cells = document.createElement('div');
       cells.className = 'day-cells';
       days.forEach(day => {
@@ -1035,9 +1091,19 @@
         }
         cells.appendChild(cell);
       });
-      row.appendChild(cells);
-      grid.appendChild(row);
+      dayColumn.appendChild(cells);
     });
+    historyGrid.appendChild(nameColumn);
+    historyGrid.appendChild(dayColumn);
+    grid.appendChild(historyGrid);
+    dayColumn.scrollLeft = gridScrollLeftAfterRender !== null
+      ? gridScrollLeftAfterRender
+      : previousScrollLeft === null ? dayColumn.scrollWidth : previousScrollLeft;
+    gridScrollLeftAfterRender = null;
+    dayColumn.addEventListener('scroll', () => {
+      if (dayColumn.scrollLeft <= 4) extendGridHistory(days[0], dayColumn);
+    });
+    document.getElementById('grid-title').textContent = 'history';
 
     // Streak
     const streak = calculateCurrentStreak(data);
@@ -1113,6 +1179,8 @@
     localStorage.removeItem(RATE_LIMIT_RESET_KEY);
     localStorage.removeItem('vapeLog_lastError');
     localStorage.removeItem('vapeLog_debug');
+    gridEarliestDayKey = null;
+    gridScrollLeftAfterRender = null;
     closeSettings();
     show('setup');
     toast('cleared');
