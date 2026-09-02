@@ -37,7 +37,7 @@ That's it. The token stays in your device's `localStorage`. You can clear it any
 
 The dashboard auto-syncs on open. Hit "refresh" to pull in the others' latest logs.
 
-To backfill a missed day, scroll the grid horizontally, click any past square, and answer yes/no for that person and date. If you reach the oldest visible square, the grid adds more past days to the left.
+To backfill a missed day, scroll the grid horizontally, click any past square, and answer yes/no for that person and date. The grid starts at the earliest recorded log.
 
 ## Local development
 
